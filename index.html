@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全校時間割システム</title>
+  <style>
+    body { font-family: sans-serif; background-color: #f5f7fa; padding: 20px; color: #333; }
+    h1 { text-align: center; color: #2c3e50; }
+    .selector-container { text-align: center; margin-bottom: 20px; }
+    select { padding: 10px 20px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+    .timetable-grid { display: block; max-width: 500px; margin: 0 auto; }
+    .day-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .day-title { font-size: 18px; font-weight: bold; border-left: 5px solid #3498db; padding-left: 10px; margin-bottom: 10px; color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+    th { width: 25%; color: #7f8c8d; }
+    td { font-weight: bold; color: #34495e; }
+  </style>
+</head>
+<body>
+
+  <h1>🏫 高校 時間割案内</h1>
+
+  <div class="selector-container">
+    <label for="class-select">クラスを選択：</label>
+    <select id="class-select" onchange="updateView()">
+      <option value="1-1">1年1組</option>
+      <option value="1-2">1年1組</option>
+      <option value="2-1">2年1組</option>
+      </select>
+  </div>
+
+  <div id="timetable-display" class="timetable-grid">
+    <p style="text-align:center;">データを読み込んでいます...</p>
+  </div>
+
+  <script>
+    let rawTimetableData = {};
+
+    // 1. ページが開かれたら、GASが書き出したJSONファイルを読み込む
+    window.onload = function() {
+      // GitHub Pagesに置かれた同じフォルダの timetable.json を取得する
+      fetch('./timetable.json')
+        .then(response => {
+          if (!response.ok) throw new Error('データの取得に失敗しました');
+          return response.json();
+        })
+        .then(data => {
+          rawTimetableData = data; // データを保存
+          updateView(); // 画面を表示
+        })
+        .catch(error => {
+          document.getElementById('timetable-display').innerHTML = `<p style="color:red; text-align:center;">${error.message}</p>`;
+        });
+    };
+
+    // 2. 選択されたクラスに基づいて、3日分の時間割画面を組み立てる関数
+    function updateView() {
+      const selectedClass = document.getElementById('class-select').value;
+      const displayArea = document.getElementById('timetable-display');
+      
+      if (!rawTimetableData || Object.keys(rawTimetableData).length === 0) return;
+
+      let htmlContent = '';
+
+      // JSONの中にある日付（3日分）をループ処理
+      for (const date in rawTimetableData) {
+        const classData = rawTimetableData[date][selectedClass];
+        
+        if (!classData) continue;
+
+        // 日付ごとにカード（枠）を作成
+        htmlContent += `
+          <div class="day-card">
+            <div class="day-title">${formatDate(date)}</div>
+            <table>
+              <tr><th>1限</th><td>${classData[1] || 'なし'}</td></tr>
+              <tr><th>2限</th><td>${classData[2] || 'なし'}</td></tr>
+              <tr><th>3限</th><td>${classData[3] || 'なし'}</td></tr>
+              <tr><th>4限</th><td>${classData[4] || 'なし'}</td></tr>
+              <tr><th>5限</th><td>${classData[5] || 'なし'}</td></tr>
+              <tr><th>6限</th><td>${classData[6] || 'なし'}</td></tr>
+            </table>
+          </div>
+        `;
+      }
+
+      displayArea.innerHTML = htmlContent;
+    }
+
+    // 日付の見栄えを良くする補助関数 (例: 2026-05-20 -> 5月20日)
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getMonth() + 1}月${d.getDate()}日`;
+    }
+  </script>
+</body>
+</html>
