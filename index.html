@@ -24,11 +24,14 @@
 
   <div class="selector-container">
     <label for="class-select">クラスを選択：</label>
-    <select id="class-select" onchange="updateView()">
+    <select id="class-select" onchange="updateView(); updateURL();">
       <option value="1-1">1年1組</option>
-      <option value="1-2">1年1組</option>
+      <option value="1-2">1年2組</option>
       <option value="2-1">2年1組</option>
-      </select>
+      <option value="2-2">2年2組</option>
+      <option value="3-1">3年1組</option>
+      <option value="3-2">3年2組</option>
+    </select>
   </div>
 
   <div id="timetable-display" class="timetable-grid">
@@ -36,30 +39,26 @@
   </div>
 
   <script>
-    // 1. URLの後ろについている「?class=〇〇」の情報を取得する
-    const urlParams = new URLSearchParams(window.location.search);
-    let defaultClass = urlParams.get('class'); // 例: "1-1" が入る
-
-    // 2. もしURLにクラスが指定されていなかった場合の予備（デフォルト）
-    if (!defaultClass) {
-      defaultClass = "1-1"; // URLに何も書いてないときは1-1を表示する
-    }
-
-    // 3. すでにHTML内にある「表示クラスを切り替える関数」にこのクラスを渡す
-    // ※お使いの関数名（例: changeClass や selectClass など）に合わせて書き換えてください
-    updateTimetableDisplay(defaultClass); 
-
-    // 4. もし画面にクラスを選ぶ「プルダウン（selectタグ）」がある場合、その選択状態もURLに合わせる
-    const classSelectElement = document.getElementById("classSelect"); // プルダウンのID
-    if (classSelectElement) {
-      classSelectElement.value = defaultClass;
-    }
-    
     let rawTimetableData = {};
 
-    // 1. ページが開かれたら、GASが書き出したJSONファイルを読み込む
+    // 1. ページが開かれたら、まずURLをチェックしてクラスを設定し、その後データを読み込む
     window.onload = function() {
-      // GitHub Pagesに置かれた同じフォルダの timetable.json を取得する
+      // 💡 URLの後ろについている「?class=〇〇」の情報を取得する
+      const urlParams = new URLSearchParams(window.location.search);
+      let defaultClass = urlParams.get('class');
+
+      // 💡 もしURLに指定がなければ「1-1」にする
+      if (!defaultClass) {
+        defaultClass = "1-1";
+      }
+
+      // 💡 プルダウンの選択状態をURL（またはデフォルト）のクラスに合わせる
+      const classSelectElement = document.getElementById("class-select");
+      if (classSelectElement) {
+        classSelectElement.value = defaultClass;
+      }
+
+      // GitHub Pagesに置かれた timetable.json を取得する
       fetch('./timetable.json')
         .then(response => {
           if (!response.ok) throw new Error('データの取得に失敗しました');
@@ -105,7 +104,20 @@
         `;
       }
 
+      // 該当するデータが3日間とも全くなかった場合の処理
+      if (htmlContent === '') {
+        htmlContent = '<p style="text-align:center;">指定されたクラスの時間割データがありません。</p>';
+      }
+
       displayArea.innerHTML = htmlContent;
+    }
+
+    // 💡【新設】プルダウンを変えたときにURLの後ろの文字（?class=xxx）を自動で書き換える関数
+    function updateURL() {
+      const selectedClass = document.getElementById('class-select').value;
+      const newUrl = `${window.location.pathname}?class=${selectedClass}`;
+      // 画面をリロードさせずにURLだけをスムーズに書き換えます
+      window.history.pushState({ path: newUrl }, '', newUrl);
     }
 
     // 日付の見栄えを良くする補助関数 (例: 2026-05-20 -> 5月20日)
