@@ -36,6 +36,25 @@
   </div>
 
   <script>
+    // 1. URLの後ろについている「?class=〇〇」の情報を取得する
+const urlParams = new URLSearchParams(window.location.search);
+let defaultClass = urlParams.get('class'); // 例: "1-1" が入る
+
+// 2. もしURLにクラスが指定されていなかった場合の予備（デフォルト）
+if (!defaultClass) {
+  defaultClass = "1-1"; // URLに何も書いてないときは1-1を表示する
+}
+
+// 3. すでにHTML内にある「表示クラスを切り替える関数」にこのクラスを渡す
+// ※お使いの関数名（例: changeClass や selectClass など）に合わせて書き換えてください
+updateTimetableDisplay(defaultClass); 
+
+// 4. もし画面にクラスを選ぶ「プルダウン（selectタグ）」がある場合、その選択状態もURLに合わせる
+const classSelectElement = document.getElementById("classSelect"); // プルダウンのID
+if (classSelectElement) {
+  classSelectElement.value = defaultClass;
+}
+    
     let rawTimetableData = {};
 
     // 1. ページが開かれたら、GASが書き出したJSONファイルを読み込む
