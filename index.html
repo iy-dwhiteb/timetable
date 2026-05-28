@@ -6,7 +6,9 @@
   <title>全校時間割システム</title>
   <style>
     body { font-family: sans-serif; background-color: #f5f7fa; padding: 20px; color: #333; }
-    h1 { text-align: center; color: #2c3e50; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 5px; }
+    /* 💡 最終更新時刻のスタイル */
+    .update-time { text-align: center; font-size: 13px; color: #7f8c8d; margin-bottom: 20px; }
     .selector-container { text-align: center; margin-bottom: 20px; }
     select { padding: 10px 20px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
     .timetable-grid { display: block; max-width: 500px; margin: 0 auto; }
@@ -21,6 +23,7 @@
 <body>
 
   <h1>🏫 高校 時間割案内</h1>
+  <div id="last-update" class="update-time">情報を読み込み中...</div>
 
   <div class="selector-container">
     <label for="class-select">クラスを選択：</label>
@@ -43,16 +46,13 @@
 
     // 1. ページが開かれたら、まずURLをチェックしてクラスを設定し、その後データを読み込む
     window.onload = function() {
-      // 💡 URLの後ろについている「?class=〇〇」の情報を取得する
       const urlParams = new URLSearchParams(window.location.search);
       let defaultClass = urlParams.get('class');
 
-      // 💡 もしURLに指定がなければ「1-1」にする
       if (!defaultClass) {
         defaultClass = "1-1";
       }
 
-      // 💡 プルダウンの選択状態をURL（またはデフォルト）のクラスに合わせる
       const classSelectElement = document.getElementById("class-select");
       if (classSelectElement) {
         classSelectElement.value = defaultClass;
@@ -66,10 +66,15 @@
         })
         .then(data => {
           rawTimetableData = data; // データを保存
+          
+          // 💡 データを正常に取得できた時刻を「最終更新時刻」として表示
+          setLastUpdateTime();
+          
           updateView(); // 画面を表示
         })
         .catch(error => {
           document.getElementById('timetable-display').innerHTML = `<p style="color:red; text-align:center;">${error.message}</p>`;
+          document.getElementById('last-update').innerText = "データの読み込みに失敗しました";
         });
     };
 
@@ -104,7 +109,6 @@
         `;
       }
 
-      // 該当するデータが3日間とも全くなかった場合の処理
       if (htmlContent === '') {
         htmlContent = '<p style="text-align:center;">指定されたクラスの時間割データがありません。</p>';
       }
@@ -112,18 +116,34 @@
       displayArea.innerHTML = htmlContent;
     }
 
-    // 💡【新設】プルダウンを変えたときにURLの後ろの文字（?class=xxx）を自動で書き換える関数
+    // プルダウンを変えたときにURLの後ろの文字（?class=xxx）を自動で書き換える関数
     function updateURL() {
       const selectedClass = document.getElementById('class-select').value;
       const newUrl = `${window.location.pathname}?class=${selectedClass}`;
-      // 画面をリロードさせずにURLだけをスムーズに書き換えます
       window.history.pushState({ path: newUrl }, '', newUrl);
     }
 
-    // 日付の見栄えを良くする補助関数 (例: 2026-05-20 -> 5月20日)
+    // 💡【修正】日付の見栄えを良くし、曜日も追加する補助関数 (例: 2026-05-20 -> 5月20日(水))
     function formatDate(dateStr) {
       const d = new Date(dateStr);
-      return `${d.getMonth() + 1}月${d.getDate()}日`;
+      const dayOfWeekList = ["日", "月", "火", "水", "木", "金", "土"];
+      const month = d.getMonth() + 1;
+      const date = d.getDate();
+      const dayOfWeek = dayOfWeekList[d.getDay()]; // 曜日を取得
+      
+      return `${month}月${date}日 (${dayOfWeek})`;
+    }
+
+    // 💡【新設】現在の時刻を取得して「最終更新時刻」にセットする関数
+    function setLastUpdateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      
+      document.getElementById('last-update').innerText = `最終確認時刻：${year}/${month}/${date} ${hours}:${minutes}`;
     }
   </script>
 </body>
