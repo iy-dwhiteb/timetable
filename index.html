@@ -67,13 +67,12 @@
           rawTimetableData = data; // データを保存
           
           // 💡 データを正常に取得できた時刻を「最終更新時刻」として表示
-          setLastUpdateTime();
+          
           
           updateView(); // 画面を表示
         })
         .catch(error => {
-          document.getElementById('timetable-display').innerHTML = `<p style="color:red; text-align:center;">${error.message}</p>`;
-          document.getElementById('last-update').innerText = "データの読み込みに失敗しました";
+          document.getElementById('timetable-display').innerHTML = `<p style="color:red; text-align:center;">${error.message}</p>
         });
     };
 
